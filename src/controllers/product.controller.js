@@ -1,7 +1,9 @@
 const products = require("../models/productMemory");
 const users = require("../models/userMemory");
 
+// ===============================
 // CREAR PRODUCTO
+// ===============================
 const createProduct = (req, res) => {
 
   const {
@@ -14,10 +16,24 @@ const createProduct = (req, res) => {
     image
   } = req.body;
 
-  // ❌ validar vendedor
+  // 🔥 VALIDAR CAMPOS OBLIGATORIOS
+  if (
+    !title ||
+    !price ||
+    !description ||
+    !category ||
+    !condition ||
+    stock === undefined
+  ) {
+    return res.status(400).json({
+      error: "Todos los campos son obligatorios"
+    });
+  }
+
+  // 🔥 VALIDAR VENDEDOR
   const user = users.find(u => u.id === req.user.id);
 
-  if (!user.isSeller) {
+  if (!user || !user.isSeller) {
     return res.status(403).json({
       error: "Debes ser vendedor para publicar"
     });
@@ -27,11 +43,11 @@ const createProduct = (req, res) => {
     id: Date.now().toString(),
 
     title,
-    price,
+    price: Number(price),
     description,
     category,
     condition,
-    stock,
+    stock: Number(stock),
     image,
 
     seller: req.user.id
@@ -46,12 +62,16 @@ const createProduct = (req, res) => {
 
 };
 
+// ===============================
 // OBTENER PRODUCTOS
+// ===============================
 const getProducts = (req, res) => {
   res.json(products);
 };
 
+// ===============================
 // EDITAR PRODUCTO
+// ===============================
 const updateProduct = (req, res) => {
 
   const { id } = req.params;
@@ -64,9 +84,9 @@ const updateProduct = (req, res) => {
     });
   }
 
-  // 🔐 solo dueño o admin
+  // 🔐 SOLO DUEÑO O ADMIN
   if (
-    product.seller !== req.user.id &&
+    String(product.seller) !== String(req.user.id) &&
     req.user.role !== "admin"
   ) {
     return res.status(403).json({
@@ -74,14 +94,24 @@ const updateProduct = (req, res) => {
     });
   }
 
-  // ✅ actualizar campos correctamente
-  product.title = req.body.title ?? product.title;
-  product.price = req.body.price ?? product.price;
-  product.description = req.body.description ?? product.description;
-  product.category = req.body.category ?? product.category;
-  product.condition = req.body.condition ?? product.condition;
-  product.stock = req.body.stock ?? product.stock;
-  product.image = req.body.image ?? product.image;
+  const {
+    title,
+    price,
+    description,
+    category,
+    condition,
+    stock,
+    image
+  } = req.body;
+
+  // 🔥 ACTUALIZAR SOLO SI VIENEN DATOS VÁLIDOS
+  if (title) product.title = title;
+  if (price !== undefined) product.price = Number(price);
+  if (description) product.description = description;
+  if (category) product.category = category;
+  if (condition) product.condition = condition;
+  if (stock !== undefined && stock >= 0) product.stock = Number(stock);
+  if (image) product.image = image;
 
   res.json({
     message: "Producto actualizado ✅",
@@ -90,7 +120,9 @@ const updateProduct = (req, res) => {
 
 };
 
+// ===============================
 // ELIMINAR PRODUCTO
+// ===============================
 const deleteProduct = (req, res) => {
 
   const { id } = req.params;
@@ -103,9 +135,9 @@ const deleteProduct = (req, res) => {
     });
   }
 
-  // 🔐 solo dueño o admin
+  // 🔐 SOLO DUEÑO O ADMIN
   if (
-    product.seller !== req.user.id &&
+    String(product.seller) !== String(req.user.id) &&
     req.user.role !== "admin"
   ) {
     return res.status(403).json({
@@ -113,11 +145,14 @@ const deleteProduct = (req, res) => {
     });
   }
 
-  // 🗑️ eliminar producto
-  const index = products.indexOf(product);
-  products.splice(index, 1);
+  // 🗑️ ELIMINAR PRODUCTO
+  const index = products.findIndex(p => p.id === id);
 
-  // 🔥 eliminar producto de TODOS los carritos
+  if (index !== -1) {
+    products.splice(index, 1);
+  }
+
+  // 🔥 LIMPIAR DE TODOS LOS CARRITOS
   users.forEach(user => {
     user.cart = user.cart.filter(
       p => p.id !== id

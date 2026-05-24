@@ -1,28 +1,44 @@
 const users = require("../models/userMemory");
 const products = require("../models/productMemory");
 
+// =======================
 // VER CARRITO
+// =======================
 const getCart = (req, res) => {
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
+
+  if (!user) {
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+  }
 
   res.json(user.cart);
 
 };
 
+// =======================
 // AGREGAR PRODUCTO
+// =======================
 const addToCart = (req, res) => {
 
   const { productId } = req.body;
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
 
+  if (!user) {
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+  }
+
   const product = products.find(
-    p => p.id === productId
+    p => String(p.id) === String(productId)
   );
 
   // ❌ producto no existe
@@ -33,7 +49,7 @@ const addToCart = (req, res) => {
   }
 
   // ❌ no comprar su propio producto
-  if (product.seller === req.user.id) {
+  if (String(product.seller) === String(req.user.id)) {
     return res.status(403).json({
       error: "No puedes comprar tu propio producto"
     });
@@ -46,9 +62,9 @@ const addToCart = (req, res) => {
     });
   }
 
-  // 🔢 cuántos ya tiene en el carrito
+  // 🔢 cantidad en carrito
   const countInCart = user.cart.filter(
-    p => p.id === product.id
+    p => String(p.id) === String(product.id)
   ).length;
 
   // ❌ excede stock
@@ -58,7 +74,7 @@ const addToCart = (req, res) => {
     });
   }
 
-  // ✅ agregar al carrito
+  // ✅ agregar
   user.cart.push(product);
 
   res.json({
@@ -68,17 +84,25 @@ const addToCart = (req, res) => {
 
 };
 
-// ELIMINAR PRODUCTO DEL CARRITO
+// =======================
+// ELIMINAR DEL CARRITO
+// =======================
 const removeFromCart = (req, res) => {
 
   const { id } = req.params;
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
 
+  if (!user) {
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+  }
+
   user.cart = user.cart.filter(
-    p => p.id !== id
+    p => String(p.id) !== String(id)
   );
 
   res.json({
@@ -88,19 +112,33 @@ const removeFromCart = (req, res) => {
 
 };
 
-// COMPRAR (CHECKOUT)
+// =======================
+// CHECKOUT
+// =======================
 const checkout = (req, res) => {
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
+
+  if (!user) {
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+  }
+
+  if (user.cart.length === 0) {
+    return res.status(400).json({
+      error: "El carrito está vacío"
+    });
+  }
 
   let total = 0;
 
   for (let item of user.cart) {
 
     const product = products.find(
-      p => p.id === item.id
+      p => String(p.id) === String(item.id)
     );
 
     // ❌ producto eliminado
@@ -124,16 +162,36 @@ const checkout = (req, res) => {
 
     // 📈 sumar venta al vendedor
     const seller = users.find(
-      u => u.id === product.seller
+      u => String(u.id) === String(product.seller)
     );
 
     if (seller) {
       seller.totalSales += 1;
     }
 
+    // 🔥 eliminar producto si stock llega a 0
+    if (product.stock <= 0) {
+
+      const index = products.findIndex(
+        p => String(p.id) === String(product.id)
+      );
+
+      if (index !== -1) {
+        products.splice(index, 1);
+      }
+
+      // 🔥 eliminar de TODOS los carritos
+      users.forEach(u => {
+        u.cart = u.cart.filter(
+          p => String(p.id) !== String(product.id)
+        );
+      });
+
+    }
+
   }
 
-  // 🧹 limpiar carrito
+  // 🧹 limpiar carrito del usuario
   user.cart = [];
 
   res.json({
