@@ -41,14 +41,13 @@ const addToCart = (req, res) => {
     p => String(p.id) === String(productId)
   );
 
-  // ❌ producto no existe
   if (!product) {
     return res.status(404).json({
       error: "Producto no encontrado"
     });
   }
 
-  // ❌ no comprar su propio producto
+  // ❌ no comprar propio producto
   if (String(product.seller) === String(req.user.id)) {
     return res.status(403).json({
       error: "No puedes comprar tu propio producto"
@@ -58,23 +57,21 @@ const addToCart = (req, res) => {
   // ❌ sin stock
   if (product.stock <= 0) {
     return res.status(400).json({
-      error: "Producto sin stock"
+      error: "Sin stock"
     });
   }
 
-  // 🔢 cantidad en carrito
-  const countInCart = user.cart.filter(
+  // ❌ controlar cantidad
+  const count = user.cart.filter(
     p => String(p.id) === String(product.id)
   ).length;
 
-  // ❌ excede stock
-  if (countInCart >= product.stock) {
+  if (count >= product.stock) {
     return res.status(400).json({
-      error: "No hay suficiente stock"
+      error: "Stock insuficiente"
     });
   }
 
-  // ✅ agregar
   user.cart.push(product);
 
   res.json({
@@ -129,7 +126,7 @@ const checkout = (req, res) => {
 
   if (user.cart.length === 0) {
     return res.status(400).json({
-      error: "El carrito está vacío"
+      error: "Carrito vacío"
     });
   }
 
@@ -141,26 +138,23 @@ const checkout = (req, res) => {
       p => String(p.id) === String(item.id)
     );
 
-    // ❌ producto eliminado
     if (!product) {
       return res.status(400).json({
-        error: "Un producto en tu carrito ya no existe"
+        error: "Un producto ya no existe"
       });
     }
 
-    // ❌ sin stock
     if (product.stock <= 0) {
       return res.status(400).json({
         error: `Sin stock: ${product.title}`
       });
     }
 
-    // 🔻 descontar stock
     product.stock -= 1;
 
     total += Number(product.price);
 
-    // 📈 sumar venta al vendedor
+    // sumar ventas
     const seller = users.find(
       u => String(u.id) === String(product.seller)
     );
@@ -169,7 +163,7 @@ const checkout = (req, res) => {
       seller.totalSales += 1;
     }
 
-    // 🔥 eliminar producto si stock llega a 0
+    // eliminar si stock = 0
     if (product.stock <= 0) {
 
       const index = products.findIndex(
@@ -180,7 +174,7 @@ const checkout = (req, res) => {
         products.splice(index, 1);
       }
 
-      // 🔥 eliminar de TODOS los carritos
+      // limpiar carritos
       users.forEach(u => {
         u.cart = u.cart.filter(
           p => String(p.id) !== String(product.id)
@@ -191,7 +185,6 @@ const checkout = (req, res) => {
 
   }
 
-  // 🧹 limpiar carrito del usuario
   user.cart = [];
 
   res.json({

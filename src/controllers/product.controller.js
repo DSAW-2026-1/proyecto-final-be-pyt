@@ -16,26 +16,20 @@ const createProduct = (req, res) => {
     image
   } = req.body;
 
-  // 🔥 VALIDAR CAMPOS OBLIGATORIOS
-  if (
-    !title ||
-    !price ||
-    !description ||
-    !category ||
-    !condition ||
-    stock === undefined
-  ) {
+  // 🔥 VALIDACIÓN BÁSICA (sin romper todo)
+  if (!title || !price || !description) {
     return res.status(400).json({
-      error: "Todos los campos son obligatorios"
+      error: "Faltan campos obligatorios"
     });
   }
 
-  // 🔥 VALIDAR VENDEDOR
-  const user = users.find(u => u.id === req.user.id);
+  const user = users.find(
+    u => String(u.id) === String(req.user.id)
+  );
 
   if (!user || !user.isSeller) {
     return res.status(403).json({
-      error: "Debes ser vendedor para publicar"
+      error: "Debes ser vendedor"
     });
   }
 
@@ -45,12 +39,12 @@ const createProduct = (req, res) => {
     title,
     price: Number(price),
     description,
-    category,
-    condition,
-    stock: Number(stock),
-    image,
+    category: category || "",
+    condition: condition || "",
+    stock: Number(stock) || 0,
+    image: image || "",
 
-    seller: req.user.id
+    seller: String(req.user.id)
   };
 
   products.push(newProduct);
@@ -76,7 +70,9 @@ const updateProduct = (req, res) => {
 
   const { id } = req.params;
 
-  const product = products.find(p => p.id === id);
+  const product = products.find(
+    p => String(p.id) === String(id)
+  );
 
   if (!product) {
     return res.status(404).json({
@@ -84,9 +80,8 @@ const updateProduct = (req, res) => {
     });
   }
 
-  // 🔐 SOLO DUEÑO O ADMIN
   if (
-    String(product.seller) !== String(req.user.id) &&
+    product.seller != req.user.id &&
     req.user.role !== "admin"
   ) {
     return res.status(403).json({
@@ -94,24 +89,20 @@ const updateProduct = (req, res) => {
     });
   }
 
-  const {
-    title,
-    price,
-    description,
-    category,
-    condition,
-    stock,
-    image
-  } = req.body;
+  // 🔥 actualizar SOLO lo que venga
+  Object.keys(req.body).forEach(key => {
 
-  // 🔥 ACTUALIZAR SOLO SI VIENEN DATOS VÁLIDOS
-  if (title) product.title = title;
-  if (price !== undefined) product.price = Number(price);
-  if (description) product.description = description;
-  if (category) product.category = category;
-  if (condition) product.condition = condition;
-  if (stock !== undefined && stock >= 0) product.stock = Number(stock);
-  if (image) product.image = image;
+    if (req.body[key] !== undefined) {
+
+      if (key === "price" || key === "stock") {
+        product[key] = Number(req.body[key]);
+      } else {
+        product[key] = req.body[key];
+      }
+
+    }
+
+  });
 
   res.json({
     message: "Producto actualizado ✅",
@@ -127,7 +118,9 @@ const deleteProduct = (req, res) => {
 
   const { id } = req.params;
 
-  const product = products.find(p => p.id === id);
+  const product = products.find(
+    p => String(p.id) === String(id)
+  );
 
   if (!product) {
     return res.status(404).json({
@@ -135,9 +128,8 @@ const deleteProduct = (req, res) => {
     });
   }
 
-  // 🔐 SOLO DUEÑO O ADMIN
   if (
-    String(product.seller) !== String(req.user.id) &&
+    product.seller != req.user.id &&
     req.user.role !== "admin"
   ) {
     return res.status(403).json({
@@ -145,17 +137,19 @@ const deleteProduct = (req, res) => {
     });
   }
 
-  // 🗑️ ELIMINAR PRODUCTO
-  const index = products.findIndex(p => p.id === id);
+  // eliminar producto
+  const index = products.findIndex(
+    p => String(p.id) === String(id)
+  );
 
   if (index !== -1) {
     products.splice(index, 1);
   }
 
-  // 🔥 LIMPIAR DE TODOS LOS CARRITOS
+  // limpiar carritos
   users.forEach(user => {
     user.cart = user.cart.filter(
-      p => p.id !== id
+      p => String(p.id) !== String(id)
     );
   });
 
