@@ -6,17 +6,13 @@ const products = require("../models/productMemory");
 // =======================
 const getCart = (req, res) => {
 
-  const user = users.find(
-    u => String(u.id) === String(req.user.id)
-  );
+  const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  res.json(user.cart);
+  res.json(user.cart || []);
 
 };
 
@@ -27,24 +23,18 @@ const addToCart = (req, res) => {
 
   const { productId } = req.body;
 
-  const user = users.find(
-    u => String(u.id) === String(req.user.id)
-  );
+  const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  const product = products.find(
-    p => String(p.id) === String(productId)
-  );
+  if (!user.cart) user.cart = [];
+
+  const product = products.find(p => String(p.id) === String(productId));
 
   if (!product) {
-    return res.status(404).json({
-      error: "Producto no encontrado"
-    });
+    return res.status(404).json({ error: "Producto no encontrado" });
   }
 
   // ❌ no comprar propio producto
@@ -56,20 +46,16 @@ const addToCart = (req, res) => {
 
   // ❌ sin stock
   if (product.stock <= 0) {
-    return res.status(400).json({
-      error: "Sin stock"
-    });
+    return res.status(400).json({ error: "Sin stock" });
   }
 
-  // ❌ controlar cantidad
+  // 🔢 cantidad en carrito
   const count = user.cart.filter(
     p => String(p.id) === String(product.id)
   ).length;
 
   if (count >= product.stock) {
-    return res.status(400).json({
-      error: "Stock insuficiente"
-    });
+    return res.status(400).json({ error: "Stock insuficiente" });
   }
 
   user.cart.push(product);
@@ -88,17 +74,13 @@ const removeFromCart = (req, res) => {
 
   const { id } = req.params;
 
-  const user = users.find(
-    u => String(u.id) === String(req.user.id)
-  );
+  const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  user.cart = user.cart.filter(
+  user.cart = (user.cart || []).filter(
     p => String(p.id) !== String(id)
   );
 
@@ -110,25 +92,21 @@ const removeFromCart = (req, res) => {
 };
 
 // =======================
-// CHECKOUT
+// CHECKOUT (🔥 IMPORTANTE)
 // =======================
 const checkout = (req, res) => {
 
-  const user = users.find(
-    u => String(u.id) === String(req.user.id)
-  );
+  const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  if (user.cart.length === 0) {
-    return res.status(400).json({
-      error: "Carrito vacío"
-    });
+  if (!user.cart || user.cart.length === 0) {
+    return res.status(400).json({ error: "Carrito vacío" });
   }
+
+  if (!user.purchases) user.purchases = [];
 
   let total = 0;
 
@@ -138,32 +116,41 @@ const checkout = (req, res) => {
       p => String(p.id) === String(item.id)
     );
 
+    // ❌ producto eliminado
     if (!product) {
       return res.status(400).json({
-        error: "Un producto ya no existe"
+        error: "Un producto en tu carrito ya no existe"
       });
     }
 
+    // ❌ sin stock
     if (product.stock <= 0) {
       return res.status(400).json({
         error: `Sin stock: ${product.title}`
       });
     }
 
+    // 🔻 descontar stock
     product.stock -= 1;
 
     total += Number(product.price);
 
-    // sumar ventas
+    // 🔥 GUARDAR COMPRA (CLAVE PARA RESEÑAS)
+    user.purchases.push({
+      productId: product.id,
+      sellerId: product.seller
+    });
+
+    // 📈 sumar ventas al vendedor
     const seller = users.find(
       u => String(u.id) === String(product.seller)
     );
 
     if (seller) {
-      seller.totalSales += 1;
+      seller.totalSales = (seller.totalSales || 0) + 1;
     }
 
-    // eliminar si stock = 0
+    // 🔥 eliminar producto si stock = 0
     if (product.stock <= 0) {
 
       const index = products.findIndex(
@@ -174,17 +161,22 @@ const checkout = (req, res) => {
         products.splice(index, 1);
       }
 
-      // limpiar carritos
+      // 🔥 limpiar todos los carritos
       users.forEach(u => {
-        u.cart = u.cart.filter(
-          p => String(p.id) !== String(product.id)
-        );
+
+        if (u.cart && Array.isArray(u.cart)) {
+          u.cart = u.cart.filter(
+            p => String(p.id) !== String(product.id)
+          );
+        }
+
       });
 
     }
 
   }
 
+  // 🧹 limpiar carrito
   user.cart = [];
 
   res.json({
