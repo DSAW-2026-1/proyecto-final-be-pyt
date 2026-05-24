@@ -14,7 +14,9 @@ const cartRoutes = require("./routes/cart.routes");
 const app = express();
 
 // middlewares
-app.use(cors());
+app.use(cors({
+  origin: "https://proyecto-final-fe-pyt.vercel.app"
+}));
 app.use(express.json());
 app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
