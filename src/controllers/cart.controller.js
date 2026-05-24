@@ -92,7 +92,7 @@ const removeFromCart = (req, res) => {
 };
 
 // =======================
-// CHECKOUT (🔥 IMPORTANTE)
+// CHECKOUT (VERSIÓN FINAL PRO)
 // =======================
 const checkout = (req, res) => {
 
@@ -135,10 +135,20 @@ const checkout = (req, res) => {
 
     total += Number(product.price);
 
-    // 🔥 GUARDAR COMPRA (CLAVE PARA RESEÑAS)
+    // 🔥 GUARDAR COMPRA COMPLETA (SOLUCIÓN REAL)
     user.purchases.push({
+      id: Date.now().toString(),
+
       productId: product.id,
-      sellerId: product.seller
+      title: product.title,
+      price: product.price,
+      image: product.image,
+
+      sellerId: product.seller,
+
+      date: new Date(),
+
+      reviewed: false // 🔥 clave para reseñas
     });
 
     // 📈 sumar ventas al vendedor
@@ -161,7 +171,7 @@ const checkout = (req, res) => {
         products.splice(index, 1);
       }
 
-      // 🔥 limpiar todos los carritos
+      // 🔥 limpiar todos los carritos (SIN ERROR 500)
       users.forEach(u => {
 
         if (u.cart && Array.isArray(u.cart)) {
