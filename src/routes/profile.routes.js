@@ -1,22 +1,20 @@
 const express = require("express");
-
-const auth = require("../middleware/auth");
-
-const {
-  getProfile,
-  becomeSeller
-} = require("../controllers/profile.controller");
-
 const router = express.Router();
 
-// obtener perfil
-router.get("/", auth, getProfile);
+const users = require("../models/userMemory");
 
-// convertirse en vendedor
-router.post(
-  "/become-seller",
-  auth,
-  becomeSeller
-);
+// middleware auth
+const auth = require("../middleware/auth");
+
+router.get("/", auth, (req, res) => {
+
+  const user = users.find(u => u.id == req.user.id);
+
+  if (!user) {
+    return res.status(404).json({ error: "Usuario no encontrado" });
+  }
+
+  res.json(user);
+});
 
 module.exports = router;
