@@ -1,24 +1,45 @@
 const jwt = require("jsonwebtoken");
 
-const auth = (req, res, next) => {
+module.exports = (req, res, next) => {
+
   try {
+
     const authHeader = req.headers.authorization;
 
+    // 🔴 SI NO HAY TOKEN
     if (!authHeader) {
-      return res.status(401).json({ error: "No autorizado (sin token)" });
+      return res.status(401).json({
+        error: "No token provided"
+      });
     }
 
+    // 🔥 SEPARAR "Bearer TOKEN"
     const token = authHeader.split(" ")[1];
 
-    const decoded = jwt.verify(token, "secret123");
+    if (!token) {
+      return res.status(401).json({
+        error: "Invalid token format"
+      });
+    }
+
+    // 🔐 VERIFICAR TOKEN
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "secret"
+    );
 
     req.user = decoded;
 
     next();
 
   } catch (error) {
-    return res.status(401).json({ error: "Token inválido" });
-  }
-};
 
-module.exports = auth;
+    console.error("AUTH ERROR:", error);
+
+    return res.status(401).json({
+      error: "Token inválido"
+    });
+
+  }
+
+};
