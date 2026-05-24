@@ -1,37 +1,41 @@
 const products = require("../models/productMemory");
+const users = require("../models/userMemory");
 
 // CREAR PRODUCTO
 const createProduct = (req, res) => {
 
   const {
-  title,
-  price,
-  description,
-  category,
-  condition,
-  stock,
-  image
-} = req.body;
+    title,
+    price,
+    description,
+    category,
+    condition,
+    stock,
+    image
+  } = req.body;
 
-const newProduct = {
-  id: Date.now().toString(),
+  // ❌ validar vendedor
+  const user = users.find(u => u.id === req.user.id);
 
-  title,
+  if (!user.isSeller) {
+    return res.status(403).json({
+      error: "Debes ser vendedor para publicar"
+    });
+  }
 
-  price,
+  const newProduct = {
+    id: Date.now().toString(),
 
-  description,
+    title,
+    price,
+    description,
+    category,
+    condition,
+    stock,
+    image,
 
-  category,
-
-  condition,
-
-  stock,
-
-  image,
-
-  seller: req.user.id
-};
+    seller: req.user.id
+  };
 
   products.push(newProduct);
 
@@ -44,9 +48,7 @@ const newProduct = {
 
 // OBTENER PRODUCTOS
 const getProducts = (req, res) => {
-
   res.json(products);
-
 };
 
 // EDITAR PRODUCTO
@@ -62,7 +64,7 @@ const updateProduct = (req, res) => {
     });
   }
 
-  // solo dueño o admin
+  // 🔐 solo dueño o admin
   if (
     product.seller !== req.user.id &&
     req.user.role !== "admin"
@@ -72,7 +74,14 @@ const updateProduct = (req, res) => {
     });
   }
 
-  Object.assign(product, req.body);
+  // ✅ actualizar campos correctamente
+  product.title = req.body.title ?? product.title;
+  product.price = req.body.price ?? product.price;
+  product.description = req.body.description ?? product.description;
+  product.category = req.body.category ?? product.category;
+  product.condition = req.body.condition ?? product.condition;
+  product.stock = req.body.stock ?? product.stock;
+  product.image = req.body.image ?? product.image;
 
   res.json({
     message: "Producto actualizado ✅",
@@ -94,7 +103,7 @@ const deleteProduct = (req, res) => {
     });
   }
 
-  // solo dueño o admin
+  // 🔐 solo dueño o admin
   if (
     product.seller !== req.user.id &&
     req.user.role !== "admin"
@@ -104,9 +113,16 @@ const deleteProduct = (req, res) => {
     });
   }
 
+  // 🗑️ eliminar producto
   const index = products.indexOf(product);
-
   products.splice(index, 1);
+
+  // 🔥 eliminar producto de TODOS los carritos
+  users.forEach(user => {
+    user.cart = user.cart.filter(
+      p => p.id !== id
+    );
+  });
 
   res.json({
     message: "Producto eliminado ✅"
