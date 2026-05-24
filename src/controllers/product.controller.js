@@ -60,7 +60,28 @@ const createProduct = (req, res) => {
 // OBTENER PRODUCTOS
 // ===============================
 const getProducts = (req, res) => {
-  res.json(products);
+
+  const result = products.map(product => {
+
+    const seller = users.find(
+      u => String(u.id) === String(product.seller)
+    );
+
+    return {
+      ...product,
+
+      sellerInfo: seller ? {
+        name: seller.name,
+        rating: seller.rating || "Nuevo",
+        email: seller.email
+      } : null
+
+    };
+
+  });
+
+  res.json(result);
+
 };
 
 // ===============================

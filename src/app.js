@@ -10,6 +10,7 @@ const adminRoutes = require("./routes/admin.routes");
 const productRoutes = require("./routes/product.routes");
 const profileRoutes = require("./routes/profile.routes");
 const cartRoutes = require("./routes/cart.routes");
+const reviewRoutes = require("./routes/review.routes");
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // ruta de prueba
 app.get("/", (req, res) => {
