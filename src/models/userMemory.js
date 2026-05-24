@@ -21,7 +21,10 @@ const users = [
 
     totalSales: 0,
 
-    reviews: []
+    reviews: [],
+
+    // 🔥 ESTO ARREGLA TU ERROR 500
+    cart: []
   }
 
 ];

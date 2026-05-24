@@ -148,9 +148,15 @@ const deleteProduct = (req, res) => {
 
   // limpiar carritos
   users.forEach(user => {
-    user.cart = user.cart.filter(
-      p => String(p.id) !== String(id)
-    );
+
+    if (user.cart && Array.isArray(user.cart)) {
+
+      user.cart = user.cart.filter(
+        p => String(p.id) !== String(id)
+      );
+
+    }
+
   });
 
   res.json({
