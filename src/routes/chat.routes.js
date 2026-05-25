@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const auth = require("../middlewares/auth.middleware");
+const auth = require("../middleware/auth");
 const { sendMessage, getMessages } = require("../controllers/chat.controller");
 
 router.post("/", auth, sendMessage);
