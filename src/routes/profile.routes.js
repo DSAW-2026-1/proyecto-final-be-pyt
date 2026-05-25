@@ -5,19 +5,26 @@ const users = require("../models/userMemory");
 const auth = require("../middleware/auth");
 
 // ===============================
-// 👤 VER PERFIL (PRIVADO)
+// 👤 PERFIL PRIVADO
 // ===============================
 router.get("/", auth, (req, res) => {
 
   const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  res.json(user);
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    isSeller: user.isSeller,
+    totalSales: user.totalSales,
+    rating: user.rating || "Nuevo",
+    sellerInfo: user.sellerInfo
+  });
 });
 
 
@@ -29,16 +36,11 @@ router.post("/become-seller", auth, (req, res) => {
   const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  // evitar duplicados
   if (user.isSeller) {
-    return res.status(400).json({
-      error: "Ya eres vendedor"
-    });
+    return res.status(400).json({ error: "Ya eres vendedor" });
   }
 
   user.isSeller = true;
@@ -47,7 +49,9 @@ router.post("/become-seller", auth, (req, res) => {
     description: req.body.description || "Nuevo vendedor"
   };
 
-  res.json({
+  user.totalSales = user.totalSales || 0;
+
+  return res.json({
     message: "Ahora eres vendedor ✅",
     user
   });
@@ -55,27 +59,23 @@ router.post("/become-seller", auth, (req, res) => {
 
 
 // ===============================
-// 🌍 PERFIL PUBLICO (VENDEDOR)
+// 🌍 PERFIL PUBLICO
 // ===============================
 router.get("/public/:id", (req, res) => {
 
-  const { id } = req.params;
-
-  const user = users.find(u => String(u.id) === String(id));
+  const user = users.find(u => String(u.id) === String(req.params.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  res.json({
+  return res.json({
     id: user.id,
     name: user.name,
     email: user.email,
-    totalSales: user.totalSales,
+    totalSales: user.totalSales || 0,
     rating: user.rating || "Nuevo",
-    sellerInfo: user.sellerInfo
+    sellerInfo: user.sellerInfo || null
   });
 });
 
