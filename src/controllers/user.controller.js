@@ -1,8 +1,5 @@
 const users = require("../models/userMemory");
 
-// ==========================
-// OBTENER HISTORIAL DE COMPRAS
-// ==========================
 const getPurchases = (req, res) => {
 
   const user = users.find(
@@ -15,7 +12,7 @@ const getPurchases = (req, res) => {
     });
   }
 
-  res.json(user.purchases || []);
+  res.json(user.purchases);
 
 };
 

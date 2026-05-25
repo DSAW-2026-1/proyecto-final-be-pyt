@@ -12,7 +12,9 @@ const getCart = (req, res) => {
     return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  res.json(user.cart || []);
+  if (!user.cart) user.cart = [];
+
+  res.json(user.cart);
 
 };
 
@@ -37,7 +39,7 @@ const addToCart = (req, res) => {
     return res.status(404).json({ error: "Producto no encontrado" });
   }
 
-  // ❌ no comprar propio producto
+  // ❌ no comprar su propio producto
   if (String(product.seller) === String(req.user.id)) {
     return res.status(403).json({
       error: "No puedes comprar tu propio producto"
@@ -46,19 +48,24 @@ const addToCart = (req, res) => {
 
   // ❌ sin stock
   if (product.stock <= 0) {
-    return res.status(400).json({ error: "Sin stock" });
+    return res.status(400).json({
+      error: "Producto sin stock"
+    });
   }
 
-  // 🔢 cantidad en carrito
+  // 🔢 validar cantidad en carrito
   const count = user.cart.filter(
     p => String(p.id) === String(product.id)
   ).length;
 
   if (count >= product.stock) {
-    return res.status(400).json({ error: "Stock insuficiente" });
+    return res.status(400).json({
+      error: "No hay suficiente stock"
+    });
   }
 
-  user.cart.push(product);
+  // ✅ agregar copia segura (evita bugs por referencia)
+  user.cart.push({ ...product });
 
   res.json({
     message: "Producto agregado al carrito ✅",
@@ -80,7 +87,9 @@ const removeFromCart = (req, res) => {
     return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  user.cart = (user.cart || []).filter(
+  if (!user.cart) user.cart = [];
+
+  user.cart = user.cart.filter(
     p => String(p.id) !== String(id)
   );
 
@@ -92,7 +101,7 @@ const removeFromCart = (req, res) => {
 };
 
 // =======================
-// CHECKOUT (VERSIÓN FINAL PRO)
+// CHECKOUT (VERSIÓN FINAL ESTABLE)
 // =======================
 const checkout = (req, res) => {
 
@@ -135,7 +144,7 @@ const checkout = (req, res) => {
 
     total += Number(product.price);
 
-    // 🔥 GUARDAR COMPRA COMPLETA (SOLUCIÓN REAL)
+    // 🔥 guardar compra
     user.purchases.push({
       id: Date.now().toString(),
 
@@ -148,10 +157,10 @@ const checkout = (req, res) => {
 
       date: new Date(),
 
-      reviewed: false // 🔥 clave para reseñas
+      reviewed: false
     });
 
-    // 📈 sumar ventas al vendedor
+    // 📈 ventas del vendedor
     const seller = users.find(
       u => String(u.id) === String(product.seller)
     );
@@ -160,34 +169,34 @@ const checkout = (req, res) => {
       seller.totalSales = (seller.totalSales || 0) + 1;
     }
 
-    // 🔥 eliminar producto si stock = 0
-    if (product.stock <= 0) {
-
-      const index = products.findIndex(
-        p => String(p.id) === String(product.id)
-      );
-
-      if (index !== -1) {
-        products.splice(index, 1);
-      }
-
-      // 🔥 limpiar todos los carritos (SIN ERROR 500)
-      users.forEach(u => {
-
-        if (u.cart && Array.isArray(u.cart)) {
-          u.cart = u.cart.filter(
-            p => String(p.id) !== String(product.id)
-          );
-        }
-
-      });
-
-    }
-
   }
 
-  // 🧹 limpiar carrito
+  // 🔥 limpiar carrito SIEMPRE
   user.cart = [];
+
+  // 🔥 limpiar productos con stock 0 DESPUÉS del loop (evita bugs)
+  const productsToRemove = products.filter(p => p.stock <= 0);
+
+  productsToRemove.forEach(prod => {
+
+    const index = products.findIndex(
+      p => String(p.id) === String(prod.id)
+    );
+
+    if (index !== -1) {
+      products.splice(index, 1);
+    }
+
+    // limpiar de todos los carritos
+    users.forEach(u => {
+      if (u.cart) {
+        u.cart = u.cart.filter(
+          item => String(item.id) !== String(prod.id)
+        );
+      }
+    });
+
+  });
 
   res.json({
     message: "Compra realizada ✅",

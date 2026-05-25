@@ -1,23 +1,13 @@
 const express = require("express");
 const auth = require("../middleware/auth");
 
-// 🔥 importar controller nuevo
+// controllers
 const { getPurchases } = require("../controllers/user.controller");
 
 const router = express.Router();
 
 // ==========================
-// PERFIL (YA LO TENÍAS)
-// ==========================
-router.get("/profile", auth, (req, res) => {
-  res.json({
-    message: "Acceso permitido ✅",
-    user: req.user
-  });
-});
-
-// ==========================
-// HISTORIAL DE COMPRAS (NUEVO)
+// HISTORIAL DE COMPRAS
 // ==========================
 router.get("/purchases", auth, getPurchases);
 
