@@ -5,20 +5,22 @@ const users = require("../models/userMemory");
 // ===============================
 const getProfile = (req, res) => {
 
-  const user = users.find(
-    u => String(u.id) === String(req.user.id)
-  );
+  const user = users.find(u => String(u.id) === String(req.user.id));
 
   if (!user) {
-    return res.status(404).json({
-      error: "Usuario no encontrado"
-    });
+    return res.status(404).json({ error: "Usuario no encontrado" });
   }
 
-  // 🔥 NO devolver password
   const { password, ...userSafe } = user;
 
-  res.json(userSafe);
+  return res.json({
+    ...userSafe,
+    rating: user.rating || "Nuevo",
+    totalSales: user.totalSales || 0,
+    isSeller: user.isSeller || false,
+    sellerInfo: user.sellerInfo || null
+  });
+
 };
 
 
