@@ -15,7 +15,7 @@ const router = express.Router();
 router.get("/", auth, getCart);
 
 // agregar producto
-router.post("/", auth, addToCart);
+rrouter.post("/add", auth, addToCart);
 
 // eliminar producto
 router.delete("/:id", auth, removeFromCart);
