@@ -1,10 +1,12 @@
 const users = require("../models/userMemory");
 
-// OBTENER PERFIL
+// ===============================
+// OBTENER PERFIL PRIVADO
+// ===============================
 const getProfile = (req, res) => {
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
 
   if (!user) {
@@ -13,11 +15,16 @@ const getProfile = (req, res) => {
     });
   }
 
-  res.json(user);
+  // 🔥 NO devolver password
+  const { password, ...userSafe } = user;
 
+  res.json(userSafe);
 };
 
+
+// ===============================
 // CONVERTIRSE EN VENDEDOR
+// ===============================
 const becomeSeller = (req, res) => {
 
   const {
@@ -28,12 +35,26 @@ const becomeSeller = (req, res) => {
   } = req.body;
 
   const user = users.find(
-    u => u.id === req.user.id
+    u => String(u.id) === String(req.user.id)
   );
 
   if (!user) {
     return res.status(404).json({
       error: "Usuario no encontrado"
+    });
+  }
+
+  // 🔥 VALIDAR CAMPOS
+  if (!publicName || !phone || !faculty) {
+    return res.status(400).json({
+      error: "Todos los campos son obligatorios"
+    });
+  }
+
+  // 🔥 SI YA ES VENDEDOR
+  if (user.isSeller) {
+    return res.status(400).json({
+      error: "Ya eres vendedor"
     });
   }
 
@@ -43,17 +64,66 @@ const becomeSeller = (req, res) => {
     publicName,
     phone,
     faculty,
-    description
+    description: description || ""
   };
+
+  // 🔥 inicializar datos importantes si no existen
+  user.totalSales = user.totalSales || 0;
+  user.reviews = user.reviews || [];
+  user.notifications = user.notifications || [];
+
+  const { password, ...userSafe } = user;
 
   res.json({
     message: "Ahora eres vendedor ✅",
-    user
+    user: userSafe
   });
 
 };
 
+
+// ===============================
+// PERFIL PUBLICO DE VENDEDOR
+// ===============================
+const getPublicProfile = (req, res) => {
+
+  const { id } = req.params;
+
+  const user = users.find(
+    u => String(u.id) === String(id)
+  );
+
+  if (!user) {
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+  }
+
+  // 🔥 SOLO DATOS PUBLICOS
+  res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+
+    isSeller: user.isSeller,
+
+    sellerInfo: user.sellerInfo || null,
+
+    totalSales: user.totalSales || 0,
+
+    rating:
+      user.totalSales >= 5
+        ? user.rating || 5
+        : "Nuevo",
+
+    reviews: user.reviews || []
+  });
+
+};
+
+
 module.exports = {
   getProfile,
-  becomeSeller
+  becomeSeller,
+  getPublicProfile
 };

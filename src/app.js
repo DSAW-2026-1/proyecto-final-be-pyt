@@ -32,20 +32,43 @@ const profileRoutes = require("./routes/profile.routes");
 const cartRoutes = require("./routes/cart.routes");
 const reviewRoutes = require("./routes/review.routes");
 
+// 🆕 NUEVAS
+const reportRoutes = require("./routes/report.routes");
+const chatRoutes = require("./routes/chat.routes");
+
 // ===============================
-// 🔥 USAR RUTAS (ORDENADO)
+// 🔥 USAR RUTAS (ORDEN IMPORTA)
 // ===============================
+
+// auth primero (login/register)
 app.use("/api/auth", authRoutes);
+
+// usuario
 app.use("/api/user", userRoutes);
 
+// perfil
 app.use("/api/profile", profileRoutes);
+
+// productos
 app.use("/api/products", productRoutes);
+
+// carrito
 app.use("/api/cart", cartRoutes);
+
+// reseñas
 app.use("/api/reviews", reviewRoutes);
+
+// 🆕 reportes
+app.use("/api/reports", reportRoutes);
+
+// 🆕 chat
+app.use("/api/chat", chatRoutes);
+
+// admin
 app.use("/api/admin", adminRoutes);
 
 // ===============================
-// 🔥 MANEJO DE ERRORES 404 (CLAVE)
+// 🔥 MANEJO DE ERRORES 404
 // ===============================
 app.use((req, res) => {
   res.status(404).json({
