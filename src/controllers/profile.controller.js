@@ -5,20 +5,43 @@ const users = require("../models/userMemory");
 // ===============================
 const getProfile = (req, res) => {
 
-  const user = users.find(u => String(u.id) === String(req.user.id));
+  const user = users.find(
+    u => String(u.id) === String(req.user.id)
+  );
 
   if (!user) {
-    return res.status(404).json({ error: "Usuario no encontrado" });
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
   }
+
+  // 🔥 inicializar datos importantes
+  user.totalSales = user.totalSales || 0;
+  user.reviews = user.reviews || [];
+  user.notifications = user.notifications || [];
+  user.cart = user.cart || [];
 
   const { password, ...userSafe } = user;
 
-  return res.json({
+  res.json({
     ...userSafe,
-    rating: user.rating || "Nuevo",
-    totalSales: user.totalSales || 0,
+
+    rating:
+      user.totalSales >= 5
+        ? user.rating || 5
+        : "Nuevo",
+
+    totalSales: user.totalSales,
+
     isSeller: user.isSeller || false,
-    sellerInfo: user.sellerInfo || null
+
+    sellerInfo: user.sellerInfo || null,
+
+    reviews: user.reviews,
+
+    notifications: user.notifications,
+
+    cart: user.cart
   });
 
 };
@@ -46,20 +69,25 @@ const becomeSeller = (req, res) => {
     });
   }
 
-  // 🔥 VALIDAR CAMPOS
+  // 🔥 validar campos
   if (!publicName || !phone || !faculty) {
+
     return res.status(400).json({
       error: "Todos los campos son obligatorios"
     });
+
   }
 
-  // 🔥 SI YA ES VENDEDOR
+  // 🔥 ya vendedor
   if (user.isSeller) {
+
     return res.status(400).json({
       error: "Ya eres vendedor"
     });
+
   }
 
+  // 🔥 convertir
   user.isSeller = true;
 
   user.sellerInfo = {
@@ -69,10 +97,11 @@ const becomeSeller = (req, res) => {
     description: description || ""
   };
 
-  // 🔥 inicializar datos importantes si no existen
+  // 🔥 inicializar datos
   user.totalSales = user.totalSales || 0;
   user.reviews = user.reviews || [];
   user.notifications = user.notifications || [];
+  user.cart = user.cart || [];
 
   const { password, ...userSafe } = user;
 
@@ -85,7 +114,7 @@ const becomeSeller = (req, res) => {
 
 
 // ===============================
-// PERFIL PUBLICO DE VENDEDOR
+// PERFIL PUBLICO DEL VENDEDOR
 // ===============================
 const getPublicProfile = (req, res) => {
 
@@ -96,15 +125,28 @@ const getPublicProfile = (req, res) => {
   );
 
   if (!user) {
+
     return res.status(404).json({
       error: "Usuario no encontrado"
     });
+
   }
 
-  // 🔥 SOLO DATOS PUBLICOS
+  // 🔥 solo vendedores públicos
+  if (!user.isSeller) {
+
+    return res.status(400).json({
+      error: "Este usuario no es vendedor"
+    });
+
+  }
+
   res.json({
+
     id: user.id,
+
     name: user.name,
+
     email: user.email,
 
     isSeller: user.isSeller,
@@ -118,7 +160,10 @@ const getPublicProfile = (req, res) => {
         ? user.rating || 5
         : "Nuevo",
 
-    reviews: user.reviews || []
+    reviews: user.reviews || [],
+
+    joinedAt: user.createdAt || "Reciente"
+
   });
 
 };

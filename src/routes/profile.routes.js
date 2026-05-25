@@ -1,16 +1,29 @@
 const express = require("express");
 const router = express.Router();
 
+// middleware auth
 const auth = require("../middleware/auth");
-const { getProfile, becomeSeller, getPublicProfile } = require("../controllers/profile.controller");
 
-// 👤 perfil privado
+// controllers
+const {
+  getProfile,
+  becomeSeller,
+  getPublicProfile
+} = require("../controllers/profile.controller");
+
+// ===============================
+// 👤 PERFIL PRIVADO
+// ===============================
 router.get("/", auth, getProfile);
 
-// 🔥 volverse vendedor
+// ===============================
+// 🛍️ CONVERTIRSE EN VENDEDOR
+// ===============================
 router.post("/become-seller", auth, becomeSeller);
 
-// 🌍 perfil público
+// ===============================
+// 🌍 PERFIL PÚBLICO
+// ===============================
 router.get("/public/:id", getPublicProfile);
 
 module.exports = router;
