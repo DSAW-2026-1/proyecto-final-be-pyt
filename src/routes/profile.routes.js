@@ -1,14 +1,21 @@
 const express = require("express");
+
 const router = express.Router();
 
-// middleware auth
+// ===============================
+// MIDDLEWARE
+// ===============================
 const auth = require("../middleware/auth");
 
-// controllers
+// ===============================
+// CONTROLLERS
+// ===============================
 const {
   getProfile,
   becomeSeller,
-  getPublicProfile
+  getPublicProfile,
+  getNotifications,
+  getPurchases
 } = require("../controllers/profile.controller");
 
 // ===============================
@@ -19,11 +26,36 @@ router.get("/", auth, getProfile);
 // ===============================
 // 🛍️ CONVERTIRSE EN VENDEDOR
 // ===============================
-router.post("/become-seller", auth, becomeSeller);
+router.post(
+  "/become-seller",
+  auth,
+  becomeSeller
+);
 
 // ===============================
 // 🌍 PERFIL PÚBLICO
 // ===============================
-router.get("/public/:id", getPublicProfile);
+router.get(
+  "/public/:id",
+  getPublicProfile
+);
+
+// ===============================
+// 🔔 NOTIFICACIONES
+// ===============================
+router.get(
+  "/notifications",
+  auth,
+  getNotifications
+);
+
+// ===============================
+// 🧾 COMPRAS
+// ===============================
+router.get(
+  "/purchases",
+  auth,
+  getPurchases
+);
 
 module.exports = router;

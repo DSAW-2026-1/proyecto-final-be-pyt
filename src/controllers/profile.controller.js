@@ -1,7 +1,7 @@
 const users = require("../models/userMemory");
 
 // ===============================
-// OBTENER PERFIL PRIVADO
+// 👤 PERFIL PRIVADO
 // ===============================
 const getProfile = (req, res) => {
 
@@ -15,40 +15,43 @@ const getProfile = (req, res) => {
     });
   }
 
-  // 🔥 inicializar datos importantes
+  // ===============================
+  // INICIALIZAR DATOS
+  // ===============================
   user.totalSales = user.totalSales || 0;
+
   user.reviews = user.reviews || [];
+
   user.notifications = user.notifications || [];
+
   user.cart = user.cart || [];
 
-  const { password, ...userSafe } = user;
+  user.purchases = user.purchases || [];
+
+  user.isSeller = user.isSeller || false;
+
+  user.sellerInfo = user.sellerInfo || null;
+
+  // ===============================
+  // OCULTAR PASSWORD
+  // ===============================
+  const { password, ...safeUser } = user;
 
   res.json({
-    ...userSafe,
+
+    ...safeUser,
 
     rating:
       user.totalSales >= 5
         ? user.rating || 5
-        : "Nuevo",
+        : "Nuevo"
 
-    totalSales: user.totalSales,
-
-    isSeller: user.isSeller || false,
-
-    sellerInfo: user.sellerInfo || null,
-
-    reviews: user.reviews,
-
-    notifications: user.notifications,
-
-    cart: user.cart
   });
 
 };
 
-
 // ===============================
-// CONVERTIRSE EN VENDEDOR
+// 🛍️ CONVERTIRSE EN VENDEDOR
 // ===============================
 const becomeSeller = (req, res) => {
 
@@ -63,14 +66,21 @@ const becomeSeller = (req, res) => {
     u => String(u.id) === String(req.user.id)
   );
 
+  // usuario no existe
   if (!user) {
+
     return res.status(404).json({
       error: "Usuario no encontrado"
     });
+
   }
 
-  // 🔥 validar campos
-  if (!publicName || !phone || !faculty) {
+  // validar campos
+  if (
+    !publicName ||
+    !phone ||
+    !faculty
+  ) {
 
     return res.status(400).json({
       error: "Todos los campos son obligatorios"
@@ -78,7 +88,7 @@ const becomeSeller = (req, res) => {
 
   }
 
-  // 🔥 ya vendedor
+  // ya vendedor
   if (user.isSeller) {
 
     return res.status(400).json({
@@ -87,34 +97,46 @@ const becomeSeller = (req, res) => {
 
   }
 
-  // 🔥 convertir
+  // convertir
   user.isSeller = true;
 
   user.sellerInfo = {
+
     publicName,
+
     phone,
+
     faculty,
+
     description: description || ""
+
   };
 
-  // 🔥 inicializar datos
+  // inicializar
   user.totalSales = user.totalSales || 0;
+
   user.reviews = user.reviews || [];
+
   user.notifications = user.notifications || [];
+
   user.cart = user.cart || [];
 
-  const { password, ...userSafe } = user;
+  user.purchases = user.purchases || [];
+
+  const { password, ...safeUser } = user;
 
   res.json({
+
     message: "Ahora eres vendedor ✅",
-    user: userSafe
+
+    user: safeUser
+
   });
 
 };
 
-
 // ===============================
-// PERFIL PUBLICO DEL VENDEDOR
+// 🌍 PERFIL PÚBLICO
 // ===============================
 const getPublicProfile = (req, res) => {
 
@@ -132,7 +154,7 @@ const getPublicProfile = (req, res) => {
 
   }
 
-  // 🔥 solo vendedores públicos
+  // solo vendedores
   if (!user.isSeller) {
 
     return res.status(400).json({
@@ -162,15 +184,74 @@ const getPublicProfile = (req, res) => {
 
     reviews: user.reviews || [],
 
-    joinedAt: user.createdAt || "Reciente"
+    joinedAt:
+      user.createdAt || "Reciente"
 
   });
 
 };
 
+// ===============================
+// 🔔 NOTIFICACIONES
+// ===============================
+const getNotifications = (req, res) => {
 
+  const user = users.find(
+    u => String(u.id) === String(req.user.id)
+  );
+
+  if (!user) {
+
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+
+  }
+
+  user.notifications =
+    user.notifications || [];
+
+  res.json(user.notifications);
+
+};
+
+// ===============================
+// 🧾 COMPRAS
+// ===============================
+const getPurchases = (req, res) => {
+
+  const user = users.find(
+    u => String(u.id) === String(req.user.id)
+  );
+
+  if (!user) {
+
+    return res.status(404).json({
+      error: "Usuario no encontrado"
+    });
+
+  }
+
+  user.purchases =
+    user.purchases || [];
+
+  res.json(user.purchases);
+
+};
+
+// ===============================
+// EXPORTS
+// ===============================
 module.exports = {
+
   getProfile,
+
   becomeSeller,
-  getPublicProfile
+
+  getPublicProfile,
+
+  getNotifications,
+
+  getPurchases
+
 };
