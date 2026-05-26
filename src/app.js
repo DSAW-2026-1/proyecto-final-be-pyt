@@ -6,7 +6,7 @@ const cors = require("cors");
 const app = express();
 
 // ===============================
-// 🔥 MIDDLEWARES
+// MIDDLEWARES
 // ===============================
 app.use(cors({
   origin: "https://proyecto-final-fe-pyt.vercel.app"
@@ -15,60 +15,66 @@ app.use(cors({
 app.use(express.json());
 
 // ===============================
-// 🔥 RUTA DE PRUEBA
+// RUTA TEST
 // ===============================
 app.get("/", (req, res) => {
   res.send("API funcionando 🚀");
 });
 
 // ===============================
-// 🔥 IMPORTAR RUTAS
+// IMPORTAR RUTAS
 // ===============================
 const authRoutes = require("./routes/auth.routes");
+
 const userRoutes = require("./routes/user.routes");
+
 const adminRoutes = require("./routes/admin.routes");
+
 const productRoutes = require("./routes/product.routes");
+
 const profileRoutes = require("./routes/profile.routes");
+
 const cartRoutes = require("./routes/cart.routes");
+
 const reviewRoutes = require("./routes/review.routes");
 
-// 🆕 NUEVAS
 const reportRoutes = require("./routes/report.routes");
+
 const chatRoutes = require("./routes/chat.routes");
 
 // ===============================
-// 🔥 USAR RUTAS (ORDEN IMPORTA)
+// USAR RUTAS
 // ===============================
 
-// auth primero (login/register)
+// auth
 app.use("/api/auth", authRoutes);
 
-// usuario
+// users
 app.use("/api/user", userRoutes);
-
-// perfil
-app.use("/api/profile", profileRoutes);
-
-// productos
-app.use("/api/products", productRoutes);
-
-// carrito
-app.use("/api/cart", cartRoutes);
-
-// reseñas
-app.use("/api/reviews", reviewRoutes);
-
-// 🆕 reportes
-app.use("/api/reports", reportRoutes);
-
-// 🆕 chat
-app.use("/api/chat", chatRoutes);
 
 // admin
 app.use("/api/admin", adminRoutes);
 
+// products
+app.use("/api/products", productRoutes);
+
+// profile
+app.use("/api/profile", profileRoutes);
+
+// cart
+app.use("/api/cart", cartRoutes);
+
+// reviews
+app.use("/api/reviews", reviewRoutes);
+
+// reports
+app.use("/api/reports", reportRoutes);
+
+// chat
+app.use("/api/chat", chatRoutes);
+
 // ===============================
-// 🔥 MANEJO DE ERRORES 404
+// 404
 // ===============================
 app.use((req, res) => {
   res.status(404).json({
@@ -77,10 +83,12 @@ app.use((req, res) => {
 });
 
 // ===============================
-// 🔥 SERVIDOR
+// SERVER
 // ===============================
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en puerto ${PORT}`);
 });
+
+
